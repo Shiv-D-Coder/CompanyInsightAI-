@@ -133,4 +133,8 @@ async def analyze_news(request: NewsAnalysisRequest, authorized: bool = Depends(
             "company": request.company,
             "articles": analyzed_articles,
             "comparative_analysis": analysis,
-            "comprehensive_summary":
+            "comprehensive_summary":analysis,
+            "comprehensive_summary": comprehensive_summary,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
