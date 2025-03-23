@@ -11,7 +11,7 @@ import re
 # Load environment variables
 load_dotenv()
 
-def get_groq_summary(text, fallback=True):
+def get_groq_summary(text, language="en", company_name="", summary_length=400, fallback=True):
     """Summarize text using Groq API with fallback to local summarization."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -27,10 +27,24 @@ def get_groq_summary(text, fallback=True):
         "Content-Type": "application/json"
     }
     
+    # Adjust prompt based on language
+    if language != "en":
+        language_names = {
+            "hi": "Hindi",
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "zh-cn": "Chinese"
+        }
+        language_name = language_names.get(language, language)
+        prompt = f"Summarize the following news articles about {company_name} in approximately {summary_length} words. Translate the summary to {language_name}. Provide only the summary without any introductory phrases:\n\n{text}"
+    else:
+        prompt = f"Summarize the following news articles about {company_name} in approximately {summary_length} words. Provide only the summary without any introductory phrases:\n\n{text}"
+    
     data = {
         "model": "mixtral-8x7b-32768",
-        "messages": [{"role": "user", "content": text}],
-        "max_tokens": 500,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 800,
         "temperature": 0.7
     }
     
@@ -56,7 +70,6 @@ def get_groq_summary(text, fallback=True):
         if fallback:
             return local_summarize(text)
         return None
-
 def local_summarize(text, max_sentences=5):
     """Local fallback for summarization when API is unavailable."""
     # Simple extractive summarization

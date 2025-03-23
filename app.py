@@ -25,31 +25,32 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("News Sentiment Analyzer 📰")
-        st.write("This app analyzes the sentiment of recent news articles related to a given company, providing insights and an audio summary.")
-
-        st.subheader("How it Works:")
-        st.write("1. Enter a company name in the text box below. 🏢")
-        st.write("2. The app fetches news articles and analyzes their sentiment. 📊")
-        st.write("3. A comprehensive summary is generated and converted to an audio summary. 🎧")
-
-        st.markdown("---")
         
-        selected_language = st.selectbox("Select Language:", list(LANGUAGE_OPTIONS.keys()))
-        language_code = LANGUAGE_OPTIONS[selected_language]
-        
-        selected_length = st.selectbox("Select Summary Length:", list(SUMMARY_LENGTHS.keys()))
-        summary_length_words = SUMMARY_LENGTHS[selected_length]
-
-        default_instructions = f"Summarize in about {summary_length_words} words and start with 'Here is a summary of [company name]:'"
-        user_instructions = st.text_area("Custom Instructions:", default_instructions, height=150)
-        
-        # API Key Input
-        st.markdown("---")
+        # API Key Input - moved to top
         st.subheader("API Configuration")
         groq_api_key = st.text_input("Enter Groq API Key (optional):", type="password")
         if groq_api_key:
             os.environ["GROQ_API_KEY"] = groq_api_key
             st.success("API key set! ✅")
+        
+        st.markdown("---")
+        
+        # Settings section
+        st.subheader("Settings")
+        selected_length = st.selectbox("Select Summary Length:", list(SUMMARY_LENGTHS.keys()))
+        summary_length_words = SUMMARY_LENGTHS[selected_length]
+        
+        selected_language = st.selectbox("Select Language:", list(LANGUAGE_OPTIONS.keys()))
+        language_code = LANGUAGE_OPTIONS[selected_language]
+        
+        st.markdown("---")
+        
+        # How it works section
+        st.subheader("How it Works:")
+        st.write("1. Enter your API key (optional)")
+        st.write("2. Enter a company name to analyze")
+        st.write("3. The app fetches news articles and analyzes their sentiment")
+        st.write("4. A summary is generated in your selected language and provided as audio")
         
         st.markdown("---")
         st.markdown("Made with ❤️ by Your Name")  # Replace with your name
@@ -90,12 +91,17 @@ def main():
             # Step 4: Create Comprehensive Summary
             status_text.text("Creating comprehensive summary...")
             all_articles_text = "\n".join([
-                f"Title: {article['title']}\nSummary: {article['summary']}\nSource: {article['source']}\nSentiment: {article['sentiment']}\n"
+                f"Title: {article['title']}\nSummary: {article['summary']}\nSource: {article['source']}\nSentiment: {article['sentiment']}\nTopics: {', '.join(article['topics'])}\n"
                 for article in analyzed_articles
             ])
             
-            groq_prompt = f"Summarize the following news articles about {company}:\n{all_articles_text}"
-            groq_summary = get_groq_summary(groq_prompt)
+            # Pass additional parameters to get_groq_summary
+            groq_summary = get_groq_summary(
+                all_articles_text,
+                language=language_code,
+                company_name=company,
+                summary_length=summary_length_words
+            )
             progress_bar.progress(80)
             
             # Check if we have a valid summary
@@ -118,9 +124,8 @@ def main():
             # Step 5: Generate Audio
             status_text.text("Generating audio summary...")
             
-            # Create custom prompt based on user instructions
-            custom_prompt = user_instructions.replace("[company name]", company)
-            prompt_for_tts = f"{custom_prompt}\n\n{groq_summary}"
+            # Use the summary directly without additional instructions
+            prompt_for_tts = groq_summary
             
             # Use temp file for audio to avoid permission issues
             with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
