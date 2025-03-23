@@ -53,7 +53,7 @@ def main():
         st.write("4. A summary is generated in your selected language and provided as audio")
         
         st.markdown("---")
-        st.markdown("Made with ❤️ by Your Name")  # Replace with your name
+        st.markdown("Made with ❤️ by Shiv Patel")  # Replace with your name
 
     # Main App
     st.header("Analyze News Sentiment 📊")
